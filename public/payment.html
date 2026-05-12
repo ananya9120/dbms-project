@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltGuard | Payment Gateway</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .payment-container {
+            max-width: 500px;
+            margin: 60px auto;
+        }
+        .credit-card {
+            background: linear-gradient(135deg, #1e3a8a, #8b5cf6);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .credit-card::before {
+            content: '';
+            position: absolute;
+            top: -50px; right: -50px;
+            width: 150px; height: 150px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        .card-chip {
+            width: 40px; height: 30px;
+            background: gold;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .card-number { font-size: 1.4rem; letter-spacing: 2px; margin-bottom: 15px; }
+        .card-details { display: flex; justify-content: space-between; font-size: 0.85rem; text-transform: uppercase; }
+        .flex-row { display: flex; gap: 15px; }
+        .flex-row .form-group { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-brand">VoltGuard Secure Pay</div>
+        <div class="nav-links">
+            <a href="user-dashboard.html">Cancel & Return</a>
+        </div>
+    </nav>
+
+    <div class="container payment-container">
+        <div class="glass-panel" style="border-top: 4px solid var(--primary-color);">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h2>Secure Checkout</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Clear your outstanding balance securely</p>
+            </div>
+            
+            <div id="alertMsg" class="alert-message"></div>
+
+            <div class="credit-card">
+                <div class="card-chip"></div>
+                <div class="card-number" id="cc-display">**** **** **** ****</div>
+                <div class="card-details">
+                    <div>
+                        <div style="font-size: 0.6rem; opacity: 0.8;">Card Holder</div>
+                        <div id="name-display">JOHN DOE</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.6rem; opacity: 0.8;">Expires</div>
+                        <div id="exp-display">MM/YY</div>
+                    </div>
+                </div>
+            </div>
+
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label>Cardholder Name</label>
+                    <input type="text" id="cardName" class="form-control" placeholder="John Doe" required oninput="document.getElementById('name-display').textContent = this.value || 'JOHN DOE'">
+                </div>
+                <div class="form-group">
+                    <label>Card Number</label>
+                    <input type="text" id="cardNumber" class="form-control" placeholder="1234 5678 9101 1121" maxlength="19" required oninput="document.getElementById('cc-display').textContent = this.value || '**** **** **** ****'">
+                </div>
+                <div class="flex-row">
+                    <div class="form-group">
+                        <label>Expiry Date</label>
+                        <input type="text" id="expDate" class="form-control" placeholder="MM/YY" maxlength="5" required oninput="document.getElementById('exp-display').textContent = this.value || 'MM/YY'">
+                    </div>
+                    <div class="form-group">
+                        <label>CVV</label>
+                        <input type="password" id="cvv" class="form-control" placeholder="123" maxlength="3" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 15px; font-size: 1.1rem; padding: 12px;">Confirm Payment</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Basic mock validation
+            if(document.getElementById('cardNumber').value.length < 16) {
+                return showAlert('Please enter a valid card number', 'error');
+            }
+
+            // Call payment API
+            const res = await apiCall('/api/user/pay-bill', 'POST');
+            if(res.error) {
+                showAlert(res.error, 'error');
+            } else {
+                showAlert('Payment Successful! Processing...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'user-dashboard.html';
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

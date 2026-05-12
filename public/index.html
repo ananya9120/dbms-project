@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltGuard | Smart Electricity Monitoring</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 80vh;
+        }
+        .hero-text {
+            flex: 1;
+            padding-right: 50px;
+        }
+        .hero-text h1 {
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-text p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+        .hero-image {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+        .mockup-glass {
+            width: 100%;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: rgba(255,255,255,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .mockup-glass::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, transparent 60%);
+            animation: pulse 4s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Ambient Background Glows -->
+    <div style="position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%); filter: blur(60px); z-index: -1; border-radius: 50%; pointer-events: none;"></div>
+    <div style="position: absolute; top: 60vh; left: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%); filter: blur(60px); z-index: -1; border-radius: 50%; pointer-events: none;"></div>
+
+    <nav>
+        <div class="nav-brand">VoltGuard</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+            <a href="register.html" class="btn btn-primary" style="margin-left: 15px;">Get Started</a>
+        </div>
+    </nav>
+
+    <div class="container hero">
+        <div class="hero-text animate-fade-up">
+            <h1>Electricity Usage<br>Anomaly Detection System.</h1>
+            <p>Detect anomalies, predict usage with AI, and experience automated technician dispatch in real-time. The future of power management is here.</p>
+            <div style="display: flex; gap: 15px;">
+                <a href="register.html" class="btn btn-primary">Create Account</a>
+                <a href="login.html" class="btn" style="background: rgba(255,255,255,0.1); color: white;">Login</a>
+            </div>
+        </div>
+        <div class="hero-image animate-fade-up delay-200" style="position: relative;">
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(96, 165, 250, 0.4) 0%, transparent 60%); filter: blur(40px); z-index: -1;"></div>
+            <img src="assets/hero.png" alt="Smart Meter UI" class="animate-float" style="max-width: 100%; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1);">
+        </div>
+    </div>
+
+    <div class="container" style="margin-top: -50px; padding-bottom: 80px;">
+        <div class="grid grid-cols-3">
+            <div class="feature-card animate-fade-up delay-100">
+                <div class="feature-icon">🧠</div>
+                <h3>AI Prediction Engine</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">Our backend analyzes your past usage and seasonal multipliers to forecast load balancing dynamically.</p>
+            </div>
+            <div class="feature-card animate-fade-up delay-200">
+                <div class="feature-icon">⚡</div>
+                <h3>Real-Time Anomalies</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">If a smart meter pushes data that spikes above normal predicted levels, the system alerts instantly.</p>
+            </div>
+            <div class="feature-card animate-fade-up delay-300">
+                <div class="feature-icon">🔧</div>
+                <h3>Auto-Dispatch</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 10px;">The moment an anomaly is detected, the nearest registered technician is automatically assigned a ticket.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <div class="container animate-fade-up delay-300" style="padding: 60px 20px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 40px;">
+        <div class="text-center" style="margin-bottom: 50px; text-align: center;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 10px;">How VoltGuard Works</h2>
+            <p style="color: var(--text-muted);">From raw meter data to dispatched technicians in seconds.</p>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; position: relative; max-width: 900px; margin: 0 auto;">
+            <!-- Connecting line -->
+            <div style="position: absolute; top: 30px; left: 10%; right: 10%; height: 2px; background: linear-gradient(to right, #3b82f6, #8b5cf6); z-index: -1; opacity: 0.3;"></div>
+            
+            <div style="text-align: center; width: 220px; background: var(--bg-color); padding: 0 10px;">
+                <div style="width: 60px; height: 60px; background: #1e293b; border: 2px solid #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; font-size: 1.5rem; color: #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);">1</div>
+                <h4 style="margin-bottom: 8px;">Smart Push</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">IoT Meters automatically push usage data directly to the grid API.</p>
+            </div>
+            
+            <div style="text-align: center; width: 220px; background: var(--bg-color); padding: 0 10px;">
+                <div style="width: 60px; height: 60px; background: #1e293b; border: 2px solid #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; font-size: 1.5rem; color: #8b5cf6; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);">2</div>
+                <h4 style="margin-bottom: 8px;">AI Analysis</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Our engine compares the data against AI seasonal predictions.</p>
+            </div>
+            
+            <div style="text-align: center; width: 220px; background: var(--bg-color); padding: 0 10px;">
+                <div style="width: 60px; height: 60px; background: #1e293b; border: 2px solid #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; font-size: 1.5rem; color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);">3</div>
+                <h4 style="margin-bottom: 8px;">Alert & Dispatch</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Major spikes trigger anomaly alerts and auto-assign technicians.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="border-top: 1px solid rgba(255,255,255,0.05); padding: 40px 20px; text-align: center; margin-top: 60px;">
+        <div class="nav-brand" style="margin-bottom: 10px; font-size: 1.2rem; display: inline-block;">VoltGuard</div>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">© 2026 VoltGuard. Full Stack DBMS Project.</p>
+    </footer>
+
+</body>
+</html>

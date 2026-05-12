@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltGuard | Admin Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-brand" style="color: var(--warning);">VoltGuard Admin Center</div>
+        <div class="nav-links">
+            <span id="adminName" style="margin-right: 20px; color: var(--text-muted);"></span>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="alertMsg" class="alert-message"></div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-4" style="margin-bottom: 30px;">
+            <div class="glass-panel text-center">
+                <h3 style="color: var(--text-muted); font-size: 1rem;">Total Users</h3>
+                <h1 id="kpiUsers" style="font-size: 2.5rem; margin-top: 10px;">0</h1>
+            </div>
+            <div class="glass-panel text-center">
+                <h3 style="color: var(--text-muted); font-size: 1rem;">Detected Anomalies</h3>
+                <h1 id="kpiAnomalies" style="font-size: 2.5rem; margin-top: 10px; color: var(--danger);">0</h1>
+            </div>
+            <div class="glass-panel text-center">
+                <h3 style="color: var(--text-muted); font-size: 1rem;">Total Complaints</h3>
+                <h1 id="kpiComplaints" style="font-size: 2.5rem; margin-top: 10px;">0</h1>
+            </div>
+            <div class="glass-panel text-center">
+                <h3 style="color: var(--text-muted); font-size: 1rem;">Pending Issues</h3>
+                <h1 id="kpiPending" style="font-size: 2.5rem; margin-top: 10px; color: var(--warning);">0</h1>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <!-- Add Technician -->
+            <div class="glass-panel">
+                <h3>Add Technician to Fleet</h3>
+                <form id="techForm" style="margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Technician Name</label>
+                        <input type="text" id="techName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="techPhone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Service Area</label>
+                        <input type="text" id="techArea" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Technician</button>
+                </form>
+            </div>
+
+            <!-- Complaints Overview -->
+            <div class="glass-panel">
+                <h3>Recent Complaints & Dispatches</h3>
+                <div style="max-height: 300px; overflow-y: auto; margin-top: 15px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Status</th>
+                                <th>Technician</th>
+                            </tr>
+                        </thead>
+                        <tbody id="complaintsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anomalies List -->
+        <div class="glass-panel" style="margin-top: 20px;">
+            <h3>System Anomalies</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>User (Area)</th>
+                        <th>Details</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="anomaliesTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if(!user || user.role !== 'admin') window.location.href = 'login.html';
+        document.getElementById('adminName').textContent = `Admin: ${user.name}`;
+
+        const loadAdminData = async () => {
+            const dash = await apiCall('/api/admin/dashboard');
+            document.getElementById('kpiUsers').textContent = dash.totalUsers || 0;
+            document.getElementById('kpiAnomalies').textContent = dash.totalAnomalies || 0;
+            document.getElementById('kpiComplaints').textContent = dash.totalComplaints || 0;
+            document.getElementById('kpiPending').textContent = dash.pendingComplaints || 0;
+
+            const complaints = await apiCall('/api/admin/complaints');
+            const cTbody = document.getElementById('complaintsTable');
+            cTbody.innerHTML = '';
+            complaints.forEach(c => {
+                cTbody.innerHTML += `
+                    <tr>
+                        <td>${c.userId ? c.userId.name : 'Unknown'}</td>
+                        <td><span class="badge ${c.status==='Pending'?'badge-warning':'badge-success'}">${c.status}</span></td>
+                        <td>${c.technicianId ? c.technicianId.name : 'None'}</td>
+                    </tr>
+                `;
+            });
+
+            const anomalies = await apiCall('/api/admin/anomalies');
+            const aTbody = document.getElementById('anomaliesTable');
+            aTbody.innerHTML = '';
+            anomalies.forEach(a => {
+                aTbody.innerHTML += `
+                    <tr>
+                        <td>${new Date(a.alertDate).toLocaleDateString()}</td>
+                        <td>${a.userId ? a.userId.name + ' (' + a.userId.area + ')' : 'Unknown'}</td>
+                        <td>${a.details}</td>
+                        <td><span class="badge badge-danger">Unresolved</span></td>
+                    </tr>
+                `;
+            });
+        };
+
+        document.getElementById('techForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('techName').value,
+                phone: document.getElementById('techPhone').value,
+                area: document.getElementById('techArea').value
+            };
+            const res = await apiCall('/api/admin/technician', 'POST', data);
+            if(res.error) return showAlert(res.error, 'error');
+            showAlert('Technician Added Successfully', 'success');
+            document.getElementById('techForm').reset();
+            loadAdminData();
+        });
+
+        loadAdminData();
+    </script>
+</body>
+</html>

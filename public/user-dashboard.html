@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltGuard | User Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">VoltGuard Dashboard</div>
+        <div class="nav-links">
+            <span id="userName" style="margin-right: 20px; color: var(--primary-color);"></span>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="alertMsg" class="alert-message"></div>
+
+        <div class="dashboard-grid">
+            <!-- Main Content -->
+            <div>
+                <!-- Usage Graph -->
+                <div class="glass-panel" style="margin-bottom: 20px;">
+                    <h3>Usage Analytics & AI Prediction</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Compare your actual usage against our AI-driven seasonal predictions.</p>
+                    <canvas id="usageChart" height="100"></canvas>
+                </div>
+
+                <!-- History -->
+                <div class="glass-panel">
+                    <h3>Electricity Usage History</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Season</th>
+                                <th>Units Consumed</th>
+                                <th>Bill Amount</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="readingsTable">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div>
+                <!-- Billing Overview -->
+                <div class="glass-panel" style="margin-bottom: 20px; background: rgba(96, 165, 250, 0.1); border-color: rgba(96, 165, 250, 0.3);">
+                    <h3>Billing Overview</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">Total outstanding amount across all unpaid readings.</p>
+                    <div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 2rem; font-weight: bold; color: #60a5fa;" id="totalBillAmount">$0.00</span>
+                        <button onclick="window.location.href='payment.html'" class="btn btn-primary" id="payBtn" style="padding: 10px 20px;">Pay Now</button>
+                    </div>
+                </div>
+
+                <!-- Smart Meter Simulator -->
+                <div class="glass-panel" style="margin-bottom: 20px; border-left: 4px solid var(--secondary-color);">
+                    <h3>Smart Meter Simulator</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">
+                        (Demo) Simulates an automatic data push from your IoT Smart Meter directly to the grid.
+                    </p>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button onclick="simulateMeter(false)" class="btn btn-primary" style="flex: 1; font-size: 0.85rem;">Push Normal Data</button>
+                        <button onclick="simulateMeter(true)" class="btn btn-danger" style="flex: 1; font-size: 0.85rem;">Push Anomaly</button>
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div class="glass-panel" style="margin-bottom: 20px; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
+                    <h3 style="color: #f87171;">Anomaly Alerts</h3>
+                    <ul id="alertsList" style="margin-top: 10px; padding-left: 20px; color: var(--text-muted); font-size: 0.9rem;">
+                        <!-- Populated via JS -->
+                    </ul>
+                </div>
+
+                <!-- Complaints -->
+                <div class="glass-panel">
+                    <h3>Technician & Complaints</h3>
+                    <ul id="complaintsList" style="margin-top: 10px; padding-left: 20px; color: var(--text-muted); font-size: 0.9rem;">
+                        <!-- Populated via JS -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if(!user || user.role !== 'user') window.location.href = 'login.html';
+        document.getElementById('userName').textContent = `Hello, ${user.name}`;
+
+        let chartInstance = null;
+
+        const loadDashboard = async () => {
+            const data = await apiCall('/api/user/dashboard');
+            if(data.error) return showAlert(data.error, 'error');
+
+            // Render Table
+            const tbody = document.getElementById('readingsTable');
+            tbody.innerHTML = '';
+            const labels = [];
+            const actualData = [];
+            const predictedData = [];
+
+            data.readings.forEach(r => {
+                const dateStr = new Date(r.readingDate).toLocaleDateString();
+                labels.push(dateStr);
+                actualData.push(r.unitsConsumed);
+                
+                // For demonstration, predict was approx 60% if anomaly, else similar
+                predictedData.push(r.isAnomaly ? r.unitsConsumed * 0.6 : r.unitsConsumed * 1.1);
+
+                const billStr = r.billAmount ? `$${r.billAmount.toFixed(2)}` : '$0.00';
+                const paidStr = r.isPaid ? '<span class="badge badge-success">Paid</span>' : '<span class="badge badge-danger">Unpaid</span>';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${dateStr}</td>
+                        <td>${r.season}</td>
+                        <td>${r.unitsConsumed}</td>
+                        <td>${billStr}</td>
+                        <td>${paidStr}</td>
+                        <td><span class="badge ${r.isAnomaly ? 'badge-danger' : 'badge-success'}">${r.isAnomaly ? 'Anomaly' : 'Normal'}</span></td>
+                    </tr>
+                `;
+            });
+
+            // Calculate Total Bill
+            let totalBill = 0;
+            data.readings.forEach(r => {
+                if(!r.isPaid && r.billAmount) totalBill += r.billAmount;
+            });
+            document.getElementById('totalBillAmount').textContent = `$${totalBill.toFixed(2)}`;
+            if(totalBill === 0) document.getElementById('payBtn').style.display = 'none';
+            else document.getElementById('payBtn').style.display = 'block';
+
+            // Render Alerts
+            const alertsList = document.getElementById('alertsList');
+            alertsList.innerHTML = data.alerts.length === 0 ? '<li>No alerts found.</li>' : '';
+            data.alerts.forEach(a => {
+                alertsList.innerHTML += `<li style="margin-bottom: 5px;">${new Date(a.alertDate).toLocaleDateString()}: ${a.details}</li>`;
+            });
+
+            // Render Complaints
+            const complaintsList = document.getElementById('complaintsList');
+            complaintsList.innerHTML = data.complaints.length === 0 ? '<li>No active complaints.</li>' : '';
+            data.complaints.forEach(c => {
+                let techInfo = c.technicianId ? `(Tech: ${c.technicianId.name} - ${c.technicianId.phone})` : '(Pending Assignment)';
+                complaintsList.innerHTML += `<li style="margin-bottom: 5px;">Status: <b>${c.status}</b> ${techInfo}</li>`;
+            });
+
+            // Render Chart
+            renderChart(labels, actualData, predictedData, data.nextPrediction);
+        };
+
+        const renderChart = (labels, actualData, predictedData, nextPrediction) => {
+            if(chartInstance) chartInstance.destroy();
+            
+            // Add a future point for prediction
+            labels.push('Next Month (Predicted)');
+            actualData.push(null);
+            predictedData.push(nextPrediction);
+
+            const ctx = document.getElementById('usageChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Actual Usage (Units)',
+                            data: actualData,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'AI Predicted Usage',
+                            data: predictedData,
+                            borderColor: '#8b5cf6',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#f8fafc' } }
+                    }
+                }
+            });
+        };
+
+        const simulateMeter = async (forceAnomaly) => {
+            // Get prediction to know what normal looks like
+            const predRes = await apiCall('/api/user/prediction?season=Summer');
+            const basePrediction = (predRes && predRes.prediction) ? predRes.prediction : 200;
+            
+            // If normal, usage is roughly 90-110% of prediction. If anomaly, usage is > 160%
+            let units = basePrediction * (Math.random() * 0.2 + 0.9);
+            if (forceAnomaly) units = basePrediction * (Math.random() * 0.5 + 1.6);
+            
+            const data = {
+                readingDate: new Date().toISOString().split('T')[0],
+                unitsConsumed: Math.round(units),
+                season: 'Summer'
+            };
+            
+            const res = await apiCall('/api/user/reading', 'POST', data);
+            if(res.error) return showAlert(res.error, 'error');
+            
+            if(res.isAnomaly) {
+                showAlert(`SMART METER: Anomaly Detected! Usage (${data.unitsConsumed} units) exceeded prediction. Auto-dispatching technician...`, 'error');
+            } else {
+                showAlert(`SMART METER: Data synced successfully (${data.unitsConsumed} units).`, 'success');
+            }
+            loadDashboard();
+        };
+
+        loadDashboard();
+    </script>
+</body>
+</html>
