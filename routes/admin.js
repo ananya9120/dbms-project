@@ -11,5 +11,7 @@ router.get('/anomalies', adminController.getAllAnomalies);
 router.get('/complaints', adminController.getAllComplaints);
 router.get('/readings', adminController.getAllReadings);
 router.post('/technician', adminController.addTechnician);
+router.get('/technicians', adminController.getTechnicians);
+router.post('/assign-complaint', adminController.assignComplaint);
 
 module.exports = router;

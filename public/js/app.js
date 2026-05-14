@@ -1,5 +1,12 @@
 const apiCall = async (url, method = 'GET', body = null) => {
     const token = localStorage.getItem('token');
+    
+    // Prevent browser caching for GET requests
+    if (method === 'GET') {
+        const separator = url.includes('?') ? '&' : '?';
+        url += separator + '_t=' + Date.now();
+    }
+
     const headers = {
         'Content-Type': 'application/json'
     };
