@@ -3,6 +3,9 @@ const MeterReading = require('../models/MeterReading');
 const AnomalyAlert = require('../models/AnomalyAlert');
 const Technician = require('../models/Technician');
 const Complaint = require('../models/Complaint');
+const Payment = require('../models/Payment');
+const UsageNote = require('../models/UsageNote');
+
 
 // Helper for AI Statistical Prediction
 const calculatePrediction = async (userId, currentSeason) => {
@@ -41,6 +44,23 @@ exports.submitReading = async (req, res) => {
         const isLowUsage = unitsConsumed < (predictedUsage * 0.4);  
         const isAnomaly = isHighUsage || isLowUsage;
 
+        // Check if this anomaly was expected by the user
+        let isExpected = false;
+        let surgeReason = "";
+        
+        if (isHighUsage) {
+            const activeNote = await UsageNote.findOne({
+                userId,
+                startDate: { $lte: new Date(readingDate) },
+                endDate: { $gte: new Date(readingDate) },
+                isActive: true
+            });
+            if (activeNote) {
+                isExpected = true;
+                surgeReason = activeNote.reason;
+            }
+        }
+
         console.log(`[Anomaly Detection] User: ${userId}, Units: ${unitsConsumed}, Predicted: ${predictedUsage.toFixed(2)}`);
         console.log(`[Thresholds] High: ${(predictedUsage * 1.5).toFixed(2)}, Low: ${(predictedUsage * 0.4).toFixed(2)}`);
         console.log(`[Result] Anomaly: ${isAnomaly}, Type: ${isHighUsage ? 'High' : (isLowUsage ? 'Low' : 'None')}`);
@@ -54,11 +74,13 @@ exports.submitReading = async (req, res) => {
             unitsConsumed,
             season,
             isAnomaly,
+            isExpected,
+            surgeReason,
             billAmount
         });
         await reading.save();
 
-        if (isAnomaly) {
+        if (isAnomaly && !isExpected) {
             const anomalyType = isHighUsage ? 'High Usage' : 'Very low usage';
             const anomalyDetail = isHighUsage 
                 ? `High electricity consumption detected. Actual: ${unitsConsumed}, Predicted: ${predictedUsage.toFixed(2)}`
@@ -113,6 +135,7 @@ exports.getDashboardData = async (req, res) => {
         const readings = await MeterReading.find({ userId }).sort({ readingDate: 1 });
         const alerts = await AnomalyAlert.find({ userId }).populate('readingId').sort({ alertDate: -1 });
         const complaints = await Complaint.find({ userId }).populate('technicianId').sort({ date: -1 });
+        const payments = await Payment.find({ userId }).sort({ paymentDate: -1 });
 
         // Generate predictions for next month (just for UI graph)
         const nextPrediction = await calculatePrediction(userId, 'Summer');
@@ -138,7 +161,7 @@ exports.getDashboardData = async (req, res) => {
             areaComparison = ((latestReading.unitsConsumed - areaAvg) / areaAvg) * 100;
         }
 
-        res.json({ readings, alerts, complaints, nextPrediction, areaComparison: Math.round(areaComparison) });
+        res.json({ readings, alerts, complaints, payments, nextPrediction, areaComparison: Math.round(areaComparison) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -158,8 +181,26 @@ exports.getPrediction = async (req, res) => {
 exports.payBill = async (req, res) => {
     try {
         const userId = req.user._id;
+        const unpaidReadings = await MeterReading.find({ userId, isPaid: false });
+        
+        if (unpaidReadings.length === 0) {
+            return res.status(400).json({ message: 'No pending bills found' });
+        }
+
+        const totalAmount = unpaidReadings.reduce((sum, r) => sum + r.billAmount, 0);
+        const transactionId = 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+        const payment = new Payment({
+            userId,
+            amount: totalAmount,
+            transactionId,
+            readingsPaid: unpaidReadings.map(r => r._id)
+        });
+
+        await payment.save();
         await MeterReading.updateMany({ userId, isPaid: false }, { $set: { isPaid: true } });
-        res.json({ message: 'Payment successful' });
+
+        res.json({ message: 'Payment successful', transactionId, amount: totalAmount });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -180,6 +221,36 @@ exports.submitComplaint = async (req, res) => {
         await complaint.save();
 
         res.status(201).json({ message: 'Complaint submitted successfully', complaint });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.submitUsageNote = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { startDate, endDate, reason, description } = req.body;
+
+        const note = new UsageNote({
+            userId,
+            startDate,
+            endDate,
+            reason,
+            description
+        });
+
+        await note.save();
+        res.status(201).json({ message: 'Usage note saved. System will acknowledge this surge.', note });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.getUsageNotes = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const notes = await UsageNote.find({ userId }).sort({ startDate: -1 });
+        res.json(notes);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -11,6 +11,8 @@ export default function AdminDashboard() {
   const [complaints, setComplaints] = useState<any[]>([]);
   const [anomalies, setAnomalies] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [usageNotes, setUsageNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [techForm, setTechForm] = useState({ name: "", phone: "", area: "", email: "" });
   const [adminName, setAdminName] = useState("Admin");
@@ -28,17 +30,21 @@ export default function AdminDashboard() {
 
         const headers = { Authorization: `Bearer ${token}` };
         
-        const [dashRes, compRes, anomRes, techRes] = await Promise.all([
+        const [dashRes, compRes, anomRes, techRes, payRes, notesRes] = await Promise.all([
           axios.get("http://localhost:3000/api/admin/dashboard", { headers }),
           axios.get("http://localhost:3000/api/admin/complaints", { headers }),
           axios.get("http://localhost:3000/api/admin/anomalies", { headers }),
-          axios.get("http://localhost:3000/api/admin/technicians", { headers })
+          axios.get("http://localhost:3000/api/admin/technicians", { headers }),
+          axios.get("http://localhost:3000/api/admin/payments", { headers }),
+          axios.get("http://localhost:3000/api/admin/usage-notes", { headers })
         ]);
 
         setStats(dashRes.data);
         setComplaints(compRes.data);
         setAnomalies(anomRes.data);
         setTechnicians(techRes.data);
+        setPayments(payRes.data);
+        setUsageNotes(notesRes.data);
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -119,7 +125,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10">
           <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-irctc-blue">
             <p className="text-xs font-bold text-gray-400 uppercase mb-1">Grid Consumers</p>
             <p className="text-2xl font-black text-irctc-blue">{stats.totalUsers || 0}</p>
@@ -138,6 +144,10 @@ export default function AdminDashboard() {
           <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
             <p className="text-xs font-bold text-gray-400 uppercase mb-1">Avg Resolution Time</p>
             <p className="text-2xl font-black text-green-600">{stats.avgResolutionTime || 0} <span className="text-xs font-normal">HRS</span></p>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-600">
+            <p className="text-xs font-bold text-gray-400 uppercase mb-1">Total Revenue</p>
+            <p className="text-2xl font-black text-purple-600">₹{stats.totalRevenue || 0}</p>
           </div>
         </div>
 
@@ -272,6 +282,112 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="lg:col-span-12 bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden mt-8">
+            <div className="bg-gray-50 border-b border-gray-100 px-6 py-4 flex items-center justify-between text-irctc-blue">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={20} />
+                <h3 className="font-bold uppercase tracking-widest text-sm">Financial Transaction Ledger</h3>
+              </div>
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Revenue Streams</div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50/50 text-gray-500 text-[10px] font-bold uppercase tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">Transaction ID</th>
+                    <th className="px-6 py-4">Consumer</th>
+                    <th className="px-6 py-4">Amount</th>
+                    <th className="px-6 py-4">Date</th>
+                    <th className="px-6 py-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {payments.map((p: any) => (
+                    <tr key={p._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 font-mono text-xs font-bold text-irctc-blue">{p.transactionId}</td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-gray-800">{p.userId?.name}</div>
+                        <div className="text-[10px] text-gray-400 uppercase">{p.userId?.area}</div>
+                      </td>
+                      <td className="px-6 py-4 font-black text-gray-900">₹{p.amount.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-xs text-gray-500">{new Date(p.paymentDate).toLocaleString()}</td>
+                      <td className="px-6 py-4">
+                        <span className="px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider bg-green-100 text-green-700 border border-green-200">
+                          {p.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {payments.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-mono text-xs uppercase tracking-widest">No transactions recorded in the ledger</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Preemptive Expected Surge Registry */}
+          <div className="lg:col-span-12 bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden mt-8">
+            <div className="bg-gray-50 border-b border-gray-100 px-6 py-4 flex items-center justify-between text-irctc-blue">
+              <div className="flex items-center gap-2">
+                <Clock size={20} className="text-irctc-orange" />
+                <h3 className="font-bold uppercase tracking-widest text-sm text-irctc-blue">Preemptive Expected Surge Registry</h3>
+              </div>
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">False Anomaly Prevention</div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50/50 text-gray-500 text-[10px] font-bold uppercase tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">Consumer</th>
+                    <th className="px-6 py-4">From Date</th>
+                    <th className="px-6 py-4">To Date</th>
+                    <th className="px-6 py-4">Reason</th>
+                    <th className="px-6 py-4">Description</th>
+                    <th className="px-6 py-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {usageNotes.map((note: any) => (
+                    <tr key={note._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-gray-800">{note.userId?.name || "Unknown"}</div>
+                        <div className="text-[10px] text-gray-400 uppercase">{note.userId?.area || "N/A"}</div>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold text-gray-700">
+                        {new Date(note.startDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold text-gray-700">
+                        {new Date(note.endDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2 py-1 rounded text-[10px] font-bold bg-orange-50 text-irctc-orange border border-orange-100 uppercase tracking-wide">
+                          {note.reason}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-gray-500 max-w-xs truncate" title={note.description}>
+                        {note.description || "—"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          note.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {note.isActive ? 'Active' : 'Expired'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {usageNotes.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-mono text-xs uppercase tracking-widest">No preemptive surge reports submitted by consumers</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

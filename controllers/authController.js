@@ -1,10 +1,11 @@
 const User = require('../models/User');
+const Technician = require('../models/Technician');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, role, address, area } = req.body;
+        const { name, email, password, role, address, area, phone } = req.body;
         const existingUser = await User.findOne({ email });
         if (existingUser) return res.status(400).json({ error: 'User already exists' });
 
@@ -15,6 +16,17 @@ exports.register = async (req, res) => {
             name, email, password: hashedPassword, role: role || 'user', address, area
         });
         await user.save();
+
+        if (role === 'inspector' || role === 'technician') {
+            const tech = new Technician({
+                userId: user._id,
+                name,
+                phone: phone || '0000000000',
+                area
+            });
+            await tech.save();
+        }
+
         res.status(201).json({ message: 'User registered successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });

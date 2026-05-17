@@ -141,6 +141,7 @@ export default function Register() {
                   className="block w-full px-3 py-3 border border-gray-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-irctc-blue focus:border-irctc-blue sm:text-sm"
                 >
                   <option value="user">User</option>
+                  <option value="inspector">Inspector</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>

@@ -8,5 +8,7 @@ router.get('/dashboard', auth, userController.getDashboardData);
 router.get('/prediction', auth, userController.getPrediction);
 router.post('/pay-bill', auth, userController.payBill);
 router.post('/complaint', auth, userController.submitComplaint);
+router.post('/usage-note', auth, userController.submitUsageNote);
+router.get('/usage-notes', auth, userController.getUsageNotes);
 
 module.exports = router;

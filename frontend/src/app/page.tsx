@@ -12,17 +12,68 @@ import {
   Activity,
   User,
   CreditCard,
-  FileText
+  FileText,
+  Mail,
+  Lock,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function Home() {
   const [isAuth, setIsAuth] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("user");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsAuth(!!localStorage.getItem("token"));
   }, []);
+
+  const handleDirectLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const res = await axios.post("http://localhost:3000/api/auth/login", { email, password });
+      
+      if (res.data.token) {
+        const userRole = res.data.user.role;
+        const normalizedRole = userRole === 'technician' ? 'inspector' : userRole;
+        if (normalizedRole !== selectedRole) {
+          setError(`Access Denied: You do not have ${selectedRole === 'user' ? 'consumer' : selectedRole} privileges.`);
+          setIsLoading(false);
+          return;
+        }
+
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        localStorage.setItem("role", res.data.user.role);
+        setSuccess(true);
+        setTimeout(() => {
+          if (res.data.user.role === 'admin') {
+            router.push('/admin-dashboard');
+          } else if (res.data.user.role === 'technician' || res.data.user.role === 'inspector') {
+            router.push('/technician-dashboard');
+          } else {
+            router.push('/dashboard');
+          }
+        }, 1500);
+      }
+    } catch (err: any) {
+      console.error("Login Error:", err);
+      const msg = err.response?.data?.error || err.message || "Authentication failed.";
+      setError(msg);
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -64,56 +115,82 @@ export default function Home() {
                 </div>
 
                 <div className="p-6 space-y-6">
-                  <h2 className="text-2xl font-bold text-irctc-blue text-center mb-8">QUICK SERVICES</h2>
+                  <h2 className="text-2xl font-bold text-irctc-blue text-center mb-4">QUICK LOGIN</h2>
                   
-                  <div className="space-y-4">
+                  {/* Role Selection Tabs */}
+                  <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+                    {["user", "inspector", "admin"].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setSelectedRole(r)}
+                        className={`flex-1 py-2 text-xs font-black rounded-md uppercase tracking-wider transition-all ${
+                          selectedRole === r
+                            ? "bg-white text-irctc-blue shadow-sm"
+                            : "text-gray-400 hover:text-gray-600"
+                        }`}
+                      >
+                        {r === "user" ? "Consumer" : r}
+                      </button>
+                    ))}
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-3 text-red-700 text-xs">
+                      {error}
+                    </div>
+                  )}
+
+                  {success && (
+                    <div className="bg-green-50 border-l-4 border-green-500 p-3 text-green-700 text-xs">
+                      Authentication successful! Redirecting...
+                    </div>
+                  )}
+
+                  <form onSubmit={handleDirectLogin} className="space-y-4">
                     <div className="relative">
                       <div className="absolute left-3 top-1/2 -translate-y-1/2 text-irctc-blue">
-                        <MapPin size={18} />
+                        <Mail size={18} />
                       </div>
                       <input 
-                        type="text" 
-                        placeholder="Consumer ID / Meter Number" 
+                        type="email" 
+                        required
+                        placeholder="Email Address" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded focus:border-irctc-blue outline-none transition-colors"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-irctc-blue">
-                          <Calendar size={18} />
-                        </div>
-                        <input 
-                          type="text" 
-                          placeholder="Bill Period" 
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded focus:border-irctc-blue outline-none transition-colors"
-                        />
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-irctc-blue">
+                        <Lock size={18} />
                       </div>
-                      <select className="w-full px-3 py-3 border border-gray-300 rounded focus:border-irctc-blue outline-none transition-colors text-gray-500 bg-white">
-                        <option>Residential</option>
-                        <option>Commercial</option>
-                        <option>Industrial</option>
-                      </select>
+                      <input 
+                        type="password" 
+                        required
+                        placeholder="Password" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded focus:border-irctc-blue outline-none transition-colors"
+                      />
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-600 pt-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 accent-irctc-orange" />
-                        <span>Show Bill History</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 accent-irctc-orange" />
-                        <span>Predict Usage</span>
-                      </label>
-                    </div>
-
-                    <Link 
-                      href={isAuth ? "/dashboard" : "/login"}
-                      className="block w-full bg-irctc-orange text-white text-center font-bold py-4 rounded shadow-lg hover:bg-opacity-90 transition-all text-lg mt-4"
+                    <button 
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-irctc-orange text-white font-bold py-4 rounded shadow-lg hover:bg-opacity-90 transition-all text-lg flex items-center justify-center gap-2"
                     >
-                      LOGIN TO PROCEED
-                    </Link>
-                  </div>
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          AUTHENTICATING...
+                        </>
+                      ) : (
+                        "LOGIN TO PROCEED"
+                      )}
+                    </button>
+                  </form>
                 </div>
               </motion.div>
             </div>
@@ -194,6 +271,93 @@ export default function Home() {
               <p className="text-gray-600 text-sm leading-relaxed">
                 Automated billing with predictive estimation and seamless online payment integration via E-Wallet and UPI.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* New Meter Application Section */}
+      <section id="apply-meter" className="py-24 bg-gray-50 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-irctc-blue/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-irctc-orange/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+            <div className="md:w-2/5 bg-irctc-blue p-12 text-white flex flex-col justify-center">
+              <h2 className="text-4xl font-bold mb-6">Apply for a New Meter</h2>
+              <p className="text-white/70 mb-8 leading-relaxed">
+                Skip the paperwork and long queues. Apply for your smart meter connection online in less than 5 minutes.
+              </p>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold">1</div>
+                  <span>Fill out the digital application form</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold">2</div>
+                  <span>Our team verifies your location</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold">3</div>
+                  <span>Professional installation within 48 hours</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="md:w-3/5 p-12">
+              <form 
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target as HTMLFormElement);
+                  const data = Object.fromEntries(formData.entries());
+                  try {
+                    const res = await fetch("http://localhost:3000/api/meter-applications/submit", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+                    if (res.ok) {
+                      alert(result.message);
+                      (e.target as HTMLFormElement).reset();
+                    } else {
+                      alert(result.error);
+                    }
+                  } catch (err) {
+                    alert("Submission failed. Please try again.");
+                  }
+                }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              >
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">Full Name</label>
+                  <input name="applicantName" required type="text" placeholder="John Doe" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-irctc-blue outline-none transition-all" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">Email Address</label>
+                  <input name="email" required type="email" placeholder="john@example.com" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-irctc-blue outline-none transition-all" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">Phone Number</label>
+                  <input name="phone" required type="tel" placeholder="+91 XXXXX XXXXX" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-irctc-blue outline-none transition-all" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">Connection Type</label>
+                  <select name="connectionType" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-irctc-blue outline-none transition-all appearance-none">
+                    <option>Residential</option>
+                    <option>Commercial</option>
+                    <option>Industrial</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-sm font-bold text-gray-700">Full Installation Address</label>
+                  <textarea name="address" required rows={3} placeholder="Street, Area, City, Pincode" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-irctc-blue outline-none transition-all"></textarea>
+                </div>
+                <button type="submit" className="md:col-span-2 py-4 bg-irctc-orange text-white font-bold rounded-xl shadow-lg hover:shadow-orange-200 hover:-translate-y-1 transition-all">
+                  Submit Application
+                </button>
+              </form>
             </div>
           </div>
         </div>

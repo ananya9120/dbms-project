@@ -3,6 +3,9 @@ const MeterReading = require('../models/MeterReading');
 const AnomalyAlert = require('../models/AnomalyAlert');
 const Technician = require('../models/Technician');
 const Complaint = require('../models/Complaint');
+const Payment = require('../models/Payment');
+const UsageNote = require('../models/UsageNote');
+
 
 exports.getDashboardData = async (req, res) => {
     try {
@@ -20,12 +23,17 @@ exports.getDashboardData = async (req, res) => {
             avgResolutionTime = (totalTime / resolvedDocs.length) / (1000 * 60 * 60); // Convert to hours
         }
 
+        // Calculate Total Revenue
+        const payments = await Payment.find();
+        const totalRevenue = payments.reduce((acc, curr) => acc + curr.amount, 0);
+
         res.json({ 
             totalUsers, 
             totalAnomalies, 
             totalComplaints, 
             pendingComplaints, 
             resolvedComplaints,
+            totalRevenue: totalRevenue.toFixed(2),
             avgResolutionTime: avgResolutionTime.toFixed(1)
         });
     } catch (err) {
@@ -134,6 +142,23 @@ exports.assignComplaint = async (req, res) => {
         await complaint.save();
 
         res.json({ message: 'Technician assigned successfully', complaint });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+exports.getAllPayments = async (req, res) => {
+    try {
+        const payments = await Payment.find().populate('userId', 'name email area').sort({ paymentDate: -1 });
+        res.json(payments);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.getAllUsageNotes = async (req, res) => {
+    try {
+        const notes = await UsageNote.find().populate('userId', 'name email area').sort({ startDate: -1 });
+        res.json(notes);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

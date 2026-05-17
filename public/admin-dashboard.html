@@ -81,6 +81,26 @@
             </div>
         </div>
 
+        <!-- Meter Applications List -->
+        <div class="glass-panel" style="margin-top: 20px;">
+            <h3>Meter Connection Applications</h3>
+            <div style="max-height: 400px; overflow-y: auto; margin-top: 15px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Applicant Name</th>
+                            <th>Email & Phone</th>
+                            <th>Type</th>
+                            <th>Address</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="meterApplicationsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Anomalies List -->
         <div class="glass-panel" style="margin-top: 20px;">
             <h3>System Anomalies</h3>
@@ -95,6 +115,26 @@
                 </thead>
                 <tbody id="anomaliesTable"></tbody>
             </table>
+        </div>
+
+        <!-- Preemptive Expected Surge Reports -->
+        <div class="glass-panel" style="margin-top: 20px;">
+            <h3>Preemptive Expected Surge Reports</h3>
+            <div style="max-height: 400px; overflow-y: auto; margin-top: 15px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>From Date</th>
+                            <th>To Date</th>
+                            <th>User Name</th>
+                            <th>Reason</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usageNotesTable"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -143,6 +183,45 @@
                     </tr>
                 `;
             });
+
+            // Load Meter Applications
+            const applications = await apiCall('/api/meter-applications/all');
+            const mTbody = document.getElementById('meterApplicationsTable');
+            mTbody.innerHTML = '';
+            applications.forEach(app => {
+                mTbody.innerHTML += `
+                    <tr>
+                        <td style="white-space: nowrap;">${new Date(app.createdAt).toLocaleDateString()}</td>
+                        <td><strong>${app.applicantName}</strong></td>
+                        <td>${app.email}<br/><small>${app.phone}</small></td>
+                        <td>${app.connectionType}</td>
+                        <td style="max-width: 200px; font-size: 0.8rem;">${app.address}</td>
+                        <td><span class="badge badge-warning">${app.status}</span></td>
+                    </tr>
+                `;
+            });
+
+            // Load Preemptive Expected Surge Reports
+            try {
+                const notes = await apiCall('/api/admin/usage-notes');
+                const nTbody = document.getElementById('usageNotesTable');
+                nTbody.innerHTML = '';
+                notes.forEach(note => {
+                    let statusBadge = note.isActive ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Expired</span>';
+                    nTbody.innerHTML += `
+                        <tr>
+                            <td style="white-space: nowrap;">${new Date(note.startDate).toLocaleDateString()}</td>
+                            <td style="white-space: nowrap;">${new Date(note.endDate).toLocaleDateString()}</td>
+                            <td><strong>${note.userId ? note.userId.name : 'Unknown'}</strong></td>
+                            <td><span class="badge badge-warning">${note.reason}</span></td>
+                            <td style="max-width: 250px; font-size: 0.8rem;">${note.description || '—'}</td>
+                            <td>${statusBadge}</td>
+                        </tr>
+                    `;
+                });
+            } catch(e) {
+                console.error("Error loading usage notes:", e);
+            }
         };
 
         document.getElementById('techForm').addEventListener('submit', async (e) => {

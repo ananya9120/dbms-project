@@ -6,6 +6,8 @@ const meterReadingSchema = new mongoose.Schema({
     unitsConsumed: { type: Number, required: true },
     season: { type: String, enum: ['Winter', 'Summer', 'Monsoon', 'Spring', 'Autumn'], default: 'Summer' },
     isAnomaly: { type: Boolean, default: false },
+    isExpected: { type: Boolean, default: false },
+    surgeReason: { type: String },
     billAmount: { type: Number, default: 0 },
     isPaid: { type: Boolean, default: false }
 }, { timestamps: true });

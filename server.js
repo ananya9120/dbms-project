@@ -17,6 +17,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/user', require('./routes/user'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/technician', require('./routes/technician'));
+app.use('/api/meter-applications', require('./routes/meterApplicationRoutes'));
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI)

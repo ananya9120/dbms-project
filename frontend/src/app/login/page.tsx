@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Fingerprint, ShieldCheck, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -10,10 +10,25 @@ import axios from "axios";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState("user");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const emailParam = params.get("email");
+      const roleParam = params.get("role");
+      if (emailParam) {
+        setEmail(emailParam);
+      }
+      if (roleParam && ["user", "inspector", "admin"].includes(roleParam)) {
+        setSelectedRole(roleParam);
+      }
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,19 +39,27 @@ export default function Login() {
       const res = await axios.post("http://localhost:3000/api/auth/login", { email, password });
       
       if (res.data.token) {
+        const userRole = res.data.user.role;
+        const normalizedRole = userRole === 'technician' ? 'inspector' : userRole;
+        if (normalizedRole !== selectedRole) {
+          setError(`Access Denied: You do not have ${selectedRole === 'user' ? 'consumer' : selectedRole} privileges.`);
+          setIsLoading(false);
+          return;
+        }
+
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.user));
         localStorage.setItem("role", res.data.user.role);
         setSuccess(true);
-          setTimeout(() => {
-            if (res.data.user.role === 'admin') {
-              router.push('/admin-dashboard');
-            } else if (res.data.user.role === 'technician') {
-              router.push('/technician-dashboard');
-            } else {
-              router.push('/dashboard');
-            }
-          }, 2000);
+        setTimeout(() => {
+          if (res.data.user.role === 'admin') {
+            router.push('/admin-dashboard');
+          } else if (res.data.user.role === 'technician' || res.data.user.role === 'inspector') {
+            router.push('/technician-dashboard');
+          } else {
+            router.push('/dashboard');
+          }
+        }, 2000);
       }
     } catch (err: any) {
       console.error("Login Error:", err);
@@ -80,6 +103,25 @@ export default function Login() {
                 {error}
               </div>
             )}
+
+            {/* Role Selection Tabs */}
+            <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+              {["user", "inspector", "admin"].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setSelectedRole(r)}
+                  className={`flex-1 py-2.5 text-xs font-black rounded-md uppercase tracking-wider transition-all ${
+                    selectedRole === r
+                      ? "bg-white text-irctc-blue shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  {r === "user" ? "Consumer" : r}
+                </button>
+              ))}
+            </div>
+
             <div className="rounded-md shadow-sm -space-y-px">
               <div>
                 <input

@@ -37,6 +37,7 @@
                     <label>Login As</label>
                     <select id="loginRole" class="form-control" style="border: 1px solid var(--primary-color);">
                         <option value="user">Standard User</option>
+                        <option value="inspector">Inspector</option>
                         <option value="admin">Administrator</option>
                     </select>
                 </div>
@@ -68,16 +69,19 @@
                 showAlert(res.error, 'error');
             } else {
                 const selectedRole = document.getElementById('loginRole').value;
-                if(res.user.role !== selectedRole) {
+                if(res.user.role !== selectedRole && !(selectedRole === 'inspector' && (res.user.role === 'technician' || res.user.role === 'inspector'))) {
                     showAlert(`Access Denied: You do not have ${selectedRole} privileges.`, 'error');
                     return;
                 }
                 
                 localStorage.setItem('token', res.token);
                 localStorage.setItem('user', JSON.stringify(res.user));
+                localStorage.setItem('role', res.user.role);
                 
                 if(res.user.role === 'admin') {
                     window.location.href = 'admin-dashboard.html';
+                } else if(res.user.role === 'technician' || res.user.role === 'inspector') {
+                    window.location.href = '/technician-dashboard';
                 } else {
                     window.location.href = 'user-dashboard.html';
                 }

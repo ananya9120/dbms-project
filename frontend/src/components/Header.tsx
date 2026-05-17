@@ -83,7 +83,7 @@ export const Header = () => {
           <div className="hidden lg:flex items-center gap-4 text-gray-700">
             {role === 'admin' ? (
               <span className="text-irctc-blue font-bold px-4 border-l border-gray-200 uppercase">Central Command</span>
-            ) : role === 'technician' ? (
+            ) : (role === 'technician' || role === 'inspector') ? (
               <span className="text-irctc-orange font-bold px-4 border-l border-gray-200 uppercase">Field Inspector</span>
             ) : (
               <>

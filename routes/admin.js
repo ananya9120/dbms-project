@@ -13,5 +13,7 @@ router.get('/readings', adminController.getAllReadings);
 router.post('/technician', adminController.addTechnician);
 router.get('/technicians', adminController.getTechnicians);
 router.post('/assign-complaint', adminController.assignComplaint);
+router.get('/payments', adminController.getAllPayments);
+router.get('/usage-notes', adminController.getAllUsageNotes);
 
 module.exports = router;
