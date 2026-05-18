@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [surgeNotes, setSurgeNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedReason, setSelectedReason] = useState("Home Event / Party");
   const router = useRouter();
 
   useEffect(() => {
@@ -356,6 +357,13 @@ export default function Dashboard() {
                     e.preventDefault();
                     const formData = new FormData(e.target as HTMLFormElement);
                     const data = Object.fromEntries(formData.entries());
+                    
+                    // Use custom specifies reason if 'Other' is chosen
+                    if (data.reason === "Other" && data.customReason) {
+                      data.reason = data.customReason;
+                    }
+                    delete data.customReason;
+
                     const token = localStorage.getItem("token");
                     try {
                       const res = await fetch("http://localhost:3000/api/user/usage-note", {
@@ -370,6 +378,16 @@ export default function Dashboard() {
                       if (res.ok) {
                         alert(result.message);
                         (e.target as HTMLFormElement).reset();
+                        setSelectedReason("Home Event / Party");
+                        
+                        // Dynamically refresh surge notes list in UI
+                        const notesRes = await fetch("http://localhost:3000/api/user/usage-notes", {
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        if (notesRes.ok) {
+                          const updatedNotes = await notesRes.json();
+                          setSurgeNotes(updatedNotes);
+                        }
                       } else {
                         alert(result.error);
                       }
@@ -391,7 +409,12 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">Reason</label>
-                    <select name="reason" className="w-full px-2 py-2 text-xs border border-gray-100 rounded bg-gray-50 outline-none focus:border-irctc-orange transition-all appearance-none">
+                    <select 
+                      name="reason" 
+                      value={selectedReason}
+                      onChange={(e) => setSelectedReason(e.target.value)}
+                      className="w-full px-2 py-2 text-xs border border-gray-100 rounded bg-gray-50 outline-none focus:border-irctc-orange transition-all appearance-none"
+                    >
                       <option>Home Event / Party</option>
                       <option>New Heavy Appliance</option>
                       <option>Construction Work</option>
@@ -399,6 +422,23 @@ export default function Dashboard() {
                       <option>Other</option>
                     </select>
                   </div>
+                  {selectedReason === "Other" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-1 overflow-hidden"
+                    >
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">Specify Reason</label>
+                      <input 
+                        name="customReason" 
+                        required 
+                        type="text" 
+                        placeholder="Please specify the reason"
+                        className="w-full px-2 py-2 text-xs border border-gray-100 rounded bg-gray-50 outline-none focus:border-irctc-orange transition-all focus:ring-1 focus:ring-irctc-orange" 
+                      />
+                    </motion.div>
+                  )}
                   <button type="submit" className="w-full py-2 bg-irctc-orange text-white text-xs font-bold rounded shadow hover:bg-opacity-90 transition-all uppercase tracking-wider">
                     Save Preemptive Note
                   </button>
