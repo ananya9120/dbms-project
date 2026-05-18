@@ -207,7 +207,7 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
                 <h1 className="text-5xl lg:text-7xl font-bold mb-6 tracking-tight leading-[1.1]">
-                  INDIAN SMART GRID <br/>
+                  ELECTRICITY ANOMALY DETECTION <br/>
                   <span className="text-irctc-orange font-black">VOLTGUARD</span>
                 </h1>
                 <div className="flex items-center gap-6 text-xl font-medium mb-8">
