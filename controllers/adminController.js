@@ -5,6 +5,7 @@ const Technician = require('../models/Technician');
 const Complaint = require('../models/Complaint');
 const Payment = require('../models/Payment');
 const UsageNote = require('../models/UsageNote');
+const MeterApplication = require('../models/MeterApplication');
 
 
 exports.getDashboardData = async (req, res) => {
@@ -159,6 +160,32 @@ exports.getAllUsageNotes = async (req, res) => {
     try {
         const notes = await UsageNote.find().populate('userId', 'name email area').sort({ startDate: -1 });
         res.json(notes);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.getAllMeterApplications = async (req, res) => {
+    try {
+        const applications = await MeterApplication.find().sort({ createdAt: -1 });
+        res.json(applications);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.updateMeterApplicationStatus = async (req, res) => {
+    try {
+        const { id, status } = req.body;
+        const application = await MeterApplication.findById(id);
+        if (!application) {
+            return res.status(404).json({ error: 'Application not found' });
+        }
+        
+        application.status = status;
+        await application.save();
+        
+        res.json({ message: `Application status updated to ${status} successfully`, application });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

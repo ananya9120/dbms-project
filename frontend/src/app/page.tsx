@@ -15,7 +15,11 @@ import {
   FileText,
   Mail,
   Lock,
-  Loader2
+  Loader2,
+  ShieldCheck,
+  AlertTriangle,
+  Flame,
+  Droplet
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -224,9 +228,9 @@ export default function Home() {
                   <Link href="/register" className="bg-white text-irctc-blue px-8 py-3 rounded-md font-bold hover:bg-gray-100 transition-all">
                     Register New Connection
                   </Link>
-                  <Link href="/help" className="border border-white text-white px-8 py-3 rounded-md font-bold hover:bg-white/10 transition-all">
+                  <a href="#safety-guidelines" className="border border-white text-white px-8 py-3 rounded-md font-bold hover:bg-white/10 transition-all flex items-center justify-center">
                     Safety Guidelines
-                  </Link>
+                  </a>
                 </div>
               </motion.div>
             </div>
@@ -271,6 +275,92 @@ export default function Home() {
               <p className="text-gray-600 text-sm leading-relaxed">
                 Automated billing with predictive estimation and seamless online payment integration via E-Wallet and UPI.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Safety Guidelines Section */}
+      <section id="safety-guidelines" className="py-20 bg-white border-t border-gray-100 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-80 h-80 bg-red-500/5 rounded-full -translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-irctc-orange/5 rounded-full translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-16">
+            <span className="text-xs font-black uppercase tracking-widest text-irctc-orange bg-irctc-orange/10 px-3 py-1 rounded-full">VoltGuard Security</span>
+            <h2 className="text-3xl lg:text-4xl font-extrabold text-irctc-blue mt-3 mb-4">Grid Safety & Emergency Guidelines</h2>
+            <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">
+              Ensure the protection of your household and our grid infrastructure by adhering to the following smart grid safety regulations.
+            </p>
+            <div className="w-24 h-1 bg-irctc-orange mx-auto mt-4"></div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Guideline 1 */}
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-irctc-blue/10 flex items-center justify-center text-irctc-blue mb-6">
+                <Zap size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-irctc-blue mb-3">Electrical Shock Prevention</h3>
+              <p className="text-gray-600 text-xs leading-relaxed">
+                Never touch exposed wiring or electrical meters. Ensure all home outlets are properly grounded with three-prong sockets, especially for heavy appliances.
+              </p>
+            </div>
+
+            {/* Guideline 2 */}
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-6">
+                <Flame size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-irctc-blue mb-3">Fire Hazard Safety</h3>
+              <p className="text-gray-600 text-xs leading-relaxed">
+                Avoid overloading extension cords and power strips. Keep combustible materials, curtains, and furniture away from space heaters and high-voltage sockets.
+              </p>
+            </div>
+
+            {/* Guideline 3 */}
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-6">
+                <Droplet size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-irctc-blue mb-3">Water & Electricity Warning</h3>
+              <p className="text-gray-600 text-xs leading-relaxed">
+                Keep all electronic devices and appliances away from sinks, bathtubs, and damp floors. Never operate electrical panels or switches with wet hands.
+              </p>
+            </div>
+
+            {/* Guideline 4 */}
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-6">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-irctc-blue mb-3">Tamper & Bypass Reporting</h3>
+              <p className="text-gray-600 text-xs leading-relaxed">
+                Smart meters are equipped with automated tamper sensors. Tampering or bypassing a meter can trigger high-voltage discharges and immediate administrative penalties.
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Emergency Action Box */}
+          <div className="mt-12 bg-irctc-blue text-white p-8 rounded-3xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/10 rounded-full text-irctc-orange animate-pulse">
+                <ShieldCheck size={28} />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold">Smart Isolation Activated</h4>
+                <p className="text-white/70 text-xs max-w-md mt-1">
+                  VoltGuard smart meters automatically shut down power transmission locally if an anomaly is detected, minimizing risk of local shocks or sparks.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <a href="#apply-meter" className="bg-white text-irctc-blue px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all text-xs">
+                Install Smart Meter
+              </a>
+              <Link href="/complaints" className="border border-white/20 hover:bg-white/10 px-6 py-3 rounded-xl font-bold transition-all text-xs">
+                Report Emergency
+              </Link>
             </div>
           </div>
         </div>

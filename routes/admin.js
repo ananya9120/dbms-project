@@ -15,5 +15,7 @@ router.get('/technicians', adminController.getTechnicians);
 router.post('/assign-complaint', adminController.assignComplaint);
 router.get('/payments', adminController.getAllPayments);
 router.get('/usage-notes', adminController.getAllUsageNotes);
+router.get('/meter-applications', adminController.getAllMeterApplications);
+router.post('/update-meter-application', adminController.updateMeterApplicationStatus);
 
 module.exports = router;

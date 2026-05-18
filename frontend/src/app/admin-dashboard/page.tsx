@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users, AlertCircle, ClipboardList, Clock, Zap, LogOut, Plus, ShieldCheck, UserPlus, Settings, TrendingUp } from "lucide-react";
+import { Users, AlertCircle, ClipboardList, Clock, Zap, LogOut, Plus, ShieldCheck, UserPlus, Settings, TrendingUp, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [usageNotes, setUsageNotes] = useState<any[]>([]);
+  const [meterApplications, setMeterApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [techForm, setTechForm] = useState({ name: "", phone: "", area: "", email: "" });
   const [adminName, setAdminName] = useState("Admin");
@@ -30,13 +31,14 @@ export default function AdminDashboard() {
 
         const headers = { Authorization: `Bearer ${token}` };
         
-        const [dashRes, compRes, anomRes, techRes, payRes, notesRes] = await Promise.all([
+        const [dashRes, compRes, anomRes, techRes, payRes, notesRes, meterAppRes] = await Promise.all([
           axios.get("http://localhost:3000/api/admin/dashboard", { headers }),
           axios.get("http://localhost:3000/api/admin/complaints", { headers }),
           axios.get("http://localhost:3000/api/admin/anomalies", { headers }),
           axios.get("http://localhost:3000/api/admin/technicians", { headers }),
           axios.get("http://localhost:3000/api/admin/payments", { headers }),
-          axios.get("http://localhost:3000/api/admin/usage-notes", { headers })
+          axios.get("http://localhost:3000/api/admin/usage-notes", { headers }),
+          axios.get("http://localhost:3000/api/admin/meter-applications", { headers })
         ]);
 
         setStats(dashRes.data);
@@ -45,6 +47,7 @@ export default function AdminDashboard() {
         setTechnicians(techRes.data);
         setPayments(payRes.data);
         setUsageNotes(notesRes.data);
+        setMeterApplications(meterAppRes.data);
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -91,6 +94,24 @@ export default function AdminDashboard() {
       window.location.reload();
     } catch (err: any) {
       alert(err.response?.data?.error || "Failed to add technician");
+    }
+  };
+
+  const handleMeterAppStatus = async (id: string, status: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post("http://localhost:3000/api/admin/update-meter-application", {
+        id,
+        status
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      alert(`Application has been ${status.toLowerCase()}ed successfully!`);
+      window.location.reload();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to update application status.");
     }
   };
 
@@ -249,6 +270,93 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Meter Applications Registry */}
+          <div className="lg:col-span-12 bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden mt-8">
+            <div className="bg-gray-50 border-b border-gray-100 px-6 py-4 flex items-center justify-between text-irctc-blue">
+              <div className="flex items-center gap-2">
+                <FileText size={20} className="text-irctc-blue" />
+                <h3 className="font-bold uppercase tracking-widest text-sm text-irctc-blue">New Meter Connection Applications</h3>
+              </div>
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Connection Requests</div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50/50 text-gray-500 text-[10px] font-bold uppercase tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">Applicant</th>
+                    <th className="px-6 py-4">Contact</th>
+                    <th className="px-6 py-4">Connection Details</th>
+                    <th className="px-6 py-4">Full Address</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {meterApplications.map((app: any) => (
+                    <tr key={app._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-gray-800">{app.applicantName}</div>
+                        <div className="text-[10px] text-gray-400">Applied: {new Date(app.createdAt).toLocaleDateString()}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-600 font-semibold">{app.phone}</div>
+                        <div className="text-[10px] text-gray-400">{app.email}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider ${
+                          app.connectionType === 'Industrial' ? 'bg-purple-100 text-purple-700' :
+                          app.connectionType === 'Commercial' ? 'bg-blue-100 text-blue-700' :
+                          'bg-green-100 text-green-700'
+                        }`}>
+                          {app.connectionType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-gray-600 max-w-xs truncate" title={app.address}>
+                        {app.address}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          app.status === 'Approved' ? 'bg-green-100 text-green-800' : 
+                          app.status === 'Rejected' ? 'bg-red-100 text-red-800' : 
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {app.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 font-medium">
+                        {app.status === 'Pending' ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleMeterAppStatus(app._id, 'Approved')}
+                              className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-3 py-1.5 rounded transition-all shadow-sm"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleMeterAppStatus(app._id, 'Rejected')}
+                              className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded transition-all shadow-sm"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs italic">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {meterApplications.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-gray-400 font-mono text-xs uppercase tracking-widest">
+                        No meter applications recorded in the database
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

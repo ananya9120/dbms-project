@@ -55,6 +55,14 @@ export const Header = () => {
   }, [pathname]);
 
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user");
+    setRole(null);
+    window.location.href = "/";
+  };
+
   return (
     <header className="w-full bg-white flex flex-col shadow-sm sticky top-0 z-50">
       {/* Top Bar */}
@@ -77,21 +85,29 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center gap-6">
-          <Link href="/login" className="bg-irctc-blue text-white px-4 py-1.5 rounded-sm font-semibold hover:bg-opacity-90">
-            LOGIN / REGISTER
-          </Link>
+          {role ? (
+            <button 
+              onClick={handleLogout} 
+              className="bg-irctc-orange text-white px-4 py-1.5 rounded-sm font-semibold hover:bg-opacity-90 cursor-pointer text-xs"
+            >
+              LOGOUT
+            </button>
+          ) : (
+            <Link href="/login" className="bg-irctc-blue text-white px-4 py-1.5 rounded-sm font-semibold hover:bg-opacity-90">
+              LOGIN / REGISTER
+            </Link>
+          )}
           <div className="hidden lg:flex items-center gap-4 text-gray-700">
+            <a href="/#apply-meter" className="text-irctc-blue font-bold px-4 border-l border-gray-200 uppercase hover:text-opacity-80 transition-colors cursor-pointer">
+              Apply for New Meter
+            </a>
             {role === 'admin' ? (
-              <span className="text-irctc-blue font-bold px-4 border-l border-gray-200 uppercase">Central Command</span>
+              <Link href="/admin-dashboard" className="hover:text-irctc-blue">DASHBOARD</Link>
             ) : (role === 'technician' || role === 'inspector') ? (
-              <span className="text-irctc-orange font-bold px-4 border-l border-gray-200 uppercase">Field Inspector</span>
-            ) : (
-              <>
-                <Link href="/dashboard" className="hover:text-irctc-blue">DASHBOARD</Link>
-                <Link href="/complaints" className="hover:text-irctc-blue">ALERTS</Link>
-                <Link href="/payment" className="hover:text-irctc-blue">E-WALLET</Link>
-              </>
-            )}
+              <Link href="/technician-dashboard" className="text-irctc-orange font-bold px-4 border-l border-gray-200 uppercase hover:underline">
+                Field Inspector
+              </Link>
+            ) : null}
             <Link href="/contact" className="hover:text-irctc-blue">CONTACT US</Link>
           </div>
         </div>
